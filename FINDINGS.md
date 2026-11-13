@@ -10,6 +10,8 @@ workaround is deleted when the fix ships.
 | 2 | 2026-11-13 | Confusing API | 2.1.0 | Open |
 | 3 | 2026-11-13 | Confusing error | 2.1.0 | Open |
 | 4 | 2026-11-13 | Missing packaging | 2.1.0 | Open |
+| 5 | 2026-11-13 | Confusing API | 2.1.0 | Open |
+| 6 | 2026-11-13 | Missing feature | 2.1.0 | Open |
 
 ## 1. README still shows `AuthManager(allow_unregistered=True)`
 
@@ -56,3 +58,27 @@ workaround is deleted when the fix ships.
   `Typing :: Typed` classifier.
 - **Nachi workaround:** a mypy override in `pyproject.toml` with
   `follow_untyped_imports = true`, to be removed once the marker ships.
+
+## 5. A structured result streams as an unlabelled text chunk
+
+- **Where:** `message/stream` for a non-streaming agent (`A2AServer`, SSE path).
+- **Symptom:** when a non-streaming agent returns a `dict`, the stream delivers it as one
+  `artifact_chunk` whose `content` is the JSON text. A client cannot tell "the agent
+  streamed this text" from "this is the structured result" without trying to parse
+  every chunk. Nachi's web page showed the Diagnostician's raw placement JSON as if it
+  were feedback.
+- **Fix:** label chunks with their part type (e.g. `"type": "json"` and the content as an
+  object), or send a structured result as an `artifact_complete` event instead of a chunk.
+- **Nachi workaround:** `gateway/service.py` drops chunks that parse as a JSON object or
+  array (`_is_structured`) and reads results from the settled task.
+
+## 6. No durable task store without Redis or Postgres
+
+- **Where:** `nexus_a2a.storage`.
+- **Symptom:** the only stores that survive a restart need an external server. Local
+  development and single-machine setups (and machines without Docker) cannot test
+  "a paused multi-turn task survives a restart" at all.
+- **Fix:** ship a SQLite store. Nachi's `src/nachi/core/store.py` (about 90 lines, public
+  `AbstractTaskStore` only, the whole `Task` as JSON like `PostgresTaskStore`) can be
+  upstreamed as-is.
+- **Nachi workaround:** `SqliteTaskStore`, used by every Nachi agent by default.

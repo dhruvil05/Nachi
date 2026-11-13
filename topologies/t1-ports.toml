@@ -1,6 +1,6 @@
 # T1: one machine, every service its own process and port.
 # Port plan from the design doc: gateway 8000, agents 8101-8108.
-# Phase 0 runs only the placeholder echo agent (8100); later phases fill in the rest.
+# Planner (8107) and Code Runner (8108) arrive in phase 2.
 name = "t1-ports"
 
 [services.gateway]
@@ -11,6 +11,31 @@ module = "nachi.gateway"
 [services.probe]
 url = "http://127.0.0.1:8099"
 
+# Phase 0 placeholder, kept as the simplest conformance target.
 [services.echo]
 url = "http://127.0.0.1:8100"
 module = "nachi.agents.echo"
+
+[services.diagnostician]
+url = "http://127.0.0.1:8101"
+module = "nachi.agents.diagnostician"
+
+[services.tutor]
+url = "http://127.0.0.1:8102"
+module = "nachi.agents.tutor"
+
+[services.explainer]
+url = "http://127.0.0.1:8103"
+module = "nachi.agents.explainer"
+
+[services.quizmaker]
+url = "http://127.0.0.1:8104"
+module = "nachi.agents.quizmaker"
+
+[services.grader]
+url = "http://127.0.0.1:8105"
+module = "nachi.agents.grader"
+
+[services.scheduler]
+url = "http://127.0.0.1:8106"
+module = "nachi.agents.scheduler"

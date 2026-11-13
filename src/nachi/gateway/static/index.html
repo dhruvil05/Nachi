@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nachi</title>
+<style>
+  :root {
+    --bg: #faf9f6; --panel: #ffffff; --ink: #1f1d1a; --quiet: #6b665e; --line: #e4e0d8;
+    --accent: #c2571a; --accent-ink: #ffffff; --good: #2f7d4f; --warn: #b7791f; --bad: #b42318;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161513; --panel: #1f1d1a; --ink: #ece8e1; --quiet: #a39d93; --line: #34312c;
+      --accent: #e07a3c; --accent-ink: #161513; --good: #5bbf85; --warn: #e0a84a; --bad: #f07a6e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 18px; margin: 0 0 12px; }
+  .quiet { color: var(--quiet); font-size: 14px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+           padding: 20px; margin-top: 20px; }
+  button { font: inherit; border-radius: 8px; border: 1px solid var(--line); cursor: pointer;
+           padding: 8px 14px; background: var(--panel); color: var(--ink); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  input, textarea { font: inherit; width: 100%; padding: 10px; border-radius: 8px;
+                    border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  textarea { min-height: 84px; resize: vertical; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .agent { white-space: pre-wrap; margin: 0; }
+  .stream { white-space: pre-wrap; color: var(--quiet); margin: 0 0 12px; min-height: 0; }
+  .options { display: grid; gap: 8px; margin-top: 12px; }
+  .options button { text-align: left; }
+  .concepts { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .concept { display: grid; grid-template-columns: 1fr 120px 40px; gap: 10px; align-items: center; font-size: 14px; }
+  .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--accent); }
+  .locked { color: var(--quiet); }
+  .result { border-left: 3px solid var(--good); padding-left: 12px; }
+  .error { color: var(--bad); }
+  .card-back { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Nachi</h1>
+      <div class="quiet">A tutor that asks before it tells.</div>
+    </div>
+    <div class="quiet" id="who"></div>
+  </header>
+
+  <section class="panel" id="signup" hidden>
+    <h2>What should Nachi call you?</h2>
+    <form id="signup-form" class="row">
+      <input id="name" placeholder="Your name" maxlength="100" required>
+      <button class="primary" type="submit">Start learning</button>
+    </form>
+  </section>
+
+  <section class="panel" id="home" hidden>
+    <h2 id="home-title">Intro Python</h2>
+    <p class="quiet" id="home-hint"></p>
+    <div class="row">
+      <button class="primary" id="btn-diagnose">Take the placement check</button>
+      <button id="btn-tutor">Study the next concept</button>
+      <button id="btn-cards">Review cards (<span id="due">0</span>)</button>
+    </div>
+  </section>
+
+  <section class="panel" id="session" hidden>
+    <h2 id="session-title"></h2>
+    <p class="stream" id="stream"></p>
+    <p class="agent" id="agent-text"></p>
+    <div class="options" id="options"></div>
+    <form id="answer-form" class="row">
+      <textarea id="answer" placeholder="Your answer"></textarea>
+      <button class="primary" type="submit" id="send">Answer</button>
+    </form>
+    <div id="result" class="result" hidden></div>
+    <p class="error" id="session-error" hidden></p>
+    <div class="row"><button id="back">Back to overview</button></div>
+  </section>
+
+  <section class="panel" id="cards" hidden>
+    <h2>Review</h2>
+    <div id="card-body"></div>
+    <div class="row"><button id="cards-back">Back to overview</button></div>
+  </section>
+
+  <section class="panel" id="progress" hidden>
+    <h2>Your mastery</h2>
+    <ul class="concepts" id="concepts"></ul>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let student = null;
+let current = null; // current SessionView
+try { student = localStorage.getItem("nachi.student"); } catch (_) {}
+
+async function api(path, options = {}) {
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (student) headers["X-Student-Id"] = student;
+  const res = await fetch(path, { ...options, headers });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `${res.status} ${res.statusText}`);
+  }
+  return res;
+}
+
+function show(...ids) {
+  for (const id of ["signup", "home", "session", "cards", "progress"]) $(id).hidden = !ids.includes(id);
+}
+
+async function loadHome() {
+  if (!student) { show("signup"); return; }
+  let me;
+  try { me = await (await api("/api/me")).json(); }
+  catch (e) { student = null; try { localStorage.removeItem("nachi.student"); } catch (_) {} show("signup"); return; }
+  $("who").textContent = me.display_name;
+  $("due").textContent = me.due_cards;
+  $("btn-diagnose").hidden = me.diagnosed;
+  $("btn-tutor").hidden = !me.diagnosed || !me.next_concept;
+  $("btn-cards").disabled = me.due_cards === 0;
+  const next = me.concepts.find((c) => c.concept_id === me.next_concept);
+  $("home-hint").className = "quiet";
+  $("home-hint").textContent = !me.diagnosed
+    ? "Start with a short placement check so Nachi knows where you are."
+    : next ? `Next up: ${next.title}.` : "You have mastered every concept.";
+  $("concepts").innerHTML = "";
+  for (const c of me.concepts) {
+    const li = document.createElement("li");
+    li.className = "concept" + (c.ready ? "" : " locked");
+    li.innerHTML = `<span></span><div class="bar"><span></span></div><span class="quiet"></span>`;
+    li.children[0].textContent = c.title + (c.ready ? "" : " (locked)");
+    li.children[1].firstChild.style.width = `${Math.round(c.mastery * 100)}%`;
+    li.children[2].textContent = `${Math.round(c.mastery * 100)}%`;
+    $("concepts").appendChild(li);
+  }
+  show("home", "progress");
+}
+
+function renderSession(view) {
+  current = view;
+  show("session");
+  $("session-title").textContent = view.kind === "diagnose" ? "Placement check" : "Tutoring";
+  $("options").innerHTML = "";
+  const waiting = view.state === "input_required";
+  const q = view.question;
+  const isChoice = waiting && q && q.options && q.options.length;
+  let text = view.text || "";
+  if (isChoice) {  // the options become buttons, so drop them from the text
+    text = text.split("\n")
+      .filter((line) => !/^\s+[A-Z]\) /.test(line) && !line.startsWith("Answer with the letter"))
+      .join("\n");
+  }
+  $("agent-text").textContent = text;
+  if (isChoice) {
+    q.options.forEach((opt, i) => {
+      const b = document.createElement("button");
+      b.textContent = `${String.fromCharCode(65 + i)}) ${opt}`;
+      b.onclick = () => send(String.fromCharCode(65 + i));
+      $("options").appendChild(b);
+    });
+  }
+  $("answer-form").hidden = !waiting || isChoice;
+  $("answer").value = "";
+  $("session-error").hidden = !view.error;
+  $("session-error").textContent = view.error || "";
+  $("result").hidden = !(view.done && view.result);
+  if (view.done && view.result) {
+    const r = view.result;
+    $("result").textContent = view.kind === "diagnose"
+      ? `Placement done after ${r.probes} questions. Your mastery bars are set.`
+      : r.mastered
+        ? `Mastered ${r.title} in ${r.answers} answers. A review card is scheduled.`
+        : `Session over for ${r.title}. Score ${Math.round(r.score * 100)}%; it will come back.`;
+  }
+}
+
+async function start(path, body) {
+  $("stream").textContent = "";
+  try { renderSession(await (await api(path, { method: "POST", body: JSON.stringify(body || {}) })).json()); }
+  catch (e) {
+    $("home-hint").textContent = `Could not start: ${e.message}`;
+    $("home-hint").className = "error";
+  }
+}
+
+async function send(answer) {
+  if (!current) return;
+  for (const b of document.querySelectorAll("#session button, #send")) b.disabled = true;
+  $("stream").textContent = "";
+  try {
+    const res = await api(`/api/sessions/${current.session_id}/answer/stream`, {
+      method: "POST", body: JSON.stringify({ answer }),
+    });
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let cut;
+      while ((cut = buffer.indexOf("\n\n")) >= 0) {
+        const line = buffer.slice(0, cut).replace(/^data: /, "");
+        buffer = buffer.slice(cut + 2);
+        if (!line.trim()) continue;
+        const event = JSON.parse(line);
+        if (event.event === "chunk") $("stream").textContent += event.text;
+        else if (event.event === "session") {
+          $("stream").textContent = "";  // the live preview is part of the final text
+          renderSession(event.session);
+        }
+        else if (event.event === "error") { $("session-error").hidden = false; $("session-error").textContent = event.message; }
+      }
+    }
+  } catch (e) { $("session-error").hidden = false; $("session-error").textContent = e.message; }
+  for (const b of document.querySelectorAll("#session button, #send")) b.disabled = false;
+}
+
+async function loadCards() {
+  const cards = await (await api("/api/cards/due")).json();
+  show("cards");
+  const body = $("card-body");
+  body.innerHTML = "";
+  if (!cards.length) { body.textContent = "Nothing due right now."; return; }
+  const card = cards[0];
+  body.innerHTML = `<p class="agent"></p><div class="card-back" hidden><p class="agent"></p></div>
+    <div class="row"><button class="primary" id="reveal">Show answer</button></div>`;
+  body.querySelector("p").textContent = card.front;
+  body.querySelector(".card-back p").textContent = card.back;
+  $("reveal").onclick = () => {
+    body.querySelector(".card-back").hidden = false;
+    const row = $("reveal").parentElement;
+    row.innerHTML = "";
+    for (const [label, score] of [["I knew it", 1.0], ["Partly", 0.6], ["I missed it", 0.2]]) {
+      const b = document.createElement("button");
+      b.textContent = label;
+      b.onclick = async () => {
+        await api(`/api/cards/${card.card_id}/review`, { method: "POST", body: JSON.stringify({ score }) });
+        loadCards();
+      };
+      row.appendChild(b);
+    }
+  };
+}
+
+$("signup-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const res = await api("/api/students", { method: "POST", body: JSON.stringify({ display_name: $("name").value }) });
+  student = (await res.json()).student_id;
+  try { localStorage.setItem("nachi.student", student); } catch (_) {}
+  loadHome();
+};
+$("answer-form").onsubmit = (e) => { e.preventDefault(); if ($("answer").value.trim()) send($("answer").value); };
+$("btn-diagnose").onclick = () => start("/api/diagnosis");
+$("btn-tutor").onclick = () => start("/api/tutoring", {});
+$("btn-cards").onclick = loadCards;
+$("back").onclick = loadHome;
+$("cards-back").onclick = loadHome;
+loadHome();
+</script>
+</body>
+</html>

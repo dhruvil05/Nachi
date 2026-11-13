@@ -1,0 +1,27 @@
+# Nightly real-model evals. They cost money, so they never block a merge.
+# Needs a repository secret ANTHROPIC_API_KEY; without it the job skips itself.
+name: evals
+
+on:
+  schedule:
+    - cron: "41 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  grader-agreement:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: uv sync --no-sources
+      - name: Grader agreement with hand-graded answers
+        if: env.ANTHROPIC_API_KEY != ''
+        run: uv run --no-sources python evals/run_grader_eval.py
+      - name: Skipped (no ANTHROPIC_API_KEY secret)
+        if: env.ANTHROPIC_API_KEY == ''
+        run: echo "Set the ANTHROPIC_API_KEY repository secret to run real-model evals."
