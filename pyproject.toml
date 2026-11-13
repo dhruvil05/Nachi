@@ -1,0 +1,69 @@
+[project]
+name = "nachi"
+version = "0.1.0.dev0"
+description = "Nachi: an adaptive Socratic tutor built as a network of A2A agents on nexus-a2a."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "nexus-a2a>=2.0,<3",
+    "anthropic>=1.0",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "sqlalchemy[asyncio]>=2.0",
+    "aiosqlite>=0.20",
+    "alembic>=1.13",
+]
+
+[project.optional-dependencies]
+postgres = ["asyncpg>=0.29", "psycopg[binary]>=3.2"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "types-pyyaml",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nachi"]
+
+# Local development uses the nexus-a2a checkout next to this repo, so library
+# fixes show up here at once. `uv sync --no-sources` ignores this and installs
+# the published release from PyPI instead (what the release CI job does).
+[tool.uv.sources]
+nexus-a2a = { path = "../nexus-a2a", editable = true }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = [
+    "contract: starts real agents on local ports and runs nexus verify",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "ASYNC"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["nachi"]
+mypy_path = "src"
+
+# nexus-a2a passes mypy --strict itself but ships no py.typed marker, so its types
+# are invisible to users (FINDINGS.md #4). Remove this once the marker ships.
+[[tool.mypy.overrides]]
+module = ["nexus_a2a", "nexus_a2a.*"]
+ignore_missing_imports = true
+follow_untyped_imports = true

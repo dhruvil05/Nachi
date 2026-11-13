@@ -1,0 +1,16 @@
+# T1: one machine, every service its own process and port.
+# Port plan from the design doc: gateway 8000, agents 8101-8108.
+# Phase 0 runs only the placeholder echo agent (8100); later phases fill in the rest.
+name = "t1-ports"
+
+[services.gateway]
+url = "http://127.0.0.1:8000"
+module = "nachi.gateway"
+
+# Identity used by `nexus verify` and contract tests. It never listens.
+[services.probe]
+url = "http://127.0.0.1:8099"
+
+[services.echo]
+url = "http://127.0.0.1:8100"
+module = "nachi.agents.echo"

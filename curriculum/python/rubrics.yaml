@@ -1,0 +1,54 @@
+# Grading rubrics, one per question type. The Grader turns these into a score from 0 to 1
+# by adding up the points of the criteria the answer meets, divided by the total.
+# Objective types (mcq, tf, output) are mostly exact checks; sa and fi need judgment.
+rubrics:
+  mcq:
+    description: Multiple choice with one correct option.
+    criteria:
+      - id: correct_option
+        points: 1
+        guidance: The chosen option matches the answer exactly.
+
+  tf:
+    description: A true/false statement.
+    criteria:
+      - id: correct_value
+        points: 1
+        guidance: The answer is the correct boolean.
+
+  fi:
+    description: Fill in the blank.
+    criteria:
+      - id: correct_term
+        points: 2
+        guidance: >
+          The missing word or phrase is right. Accept clear synonyms and harmless
+          differences in case or spacing; do not accept a different concept.
+      - id: correct_form
+        points: 1
+        guidance: The answer is in a form that would work in Python where that matters (e.g. "//" not "/").
+
+  sa:
+    description: Short answer in one to three sentences.
+    criteria:
+      - id: core_idea
+        points: 2
+        guidance: States the main idea the question asks about, in the learner's own words.
+      - id: accurate
+        points: 1
+        guidance: Says nothing false about Python. A wrong claim loses this point even if the core idea is present.
+      - id: specific
+        points: 1
+        guidance: Refers to the concrete code, value or behaviour in the question, not a generic definition.
+
+  output:
+    description: Predict the exact output of a short Python snippet.
+    criteria:
+      - id: exact_output
+        points: 2
+        guidance: The predicted output matches exactly, including line breaks and quotes.
+      - id: right_reasoning
+        points: 1
+        guidance: >
+          If the output is wrong, award this point when the mistake is a small slip
+          (e.g. one off-by-one) rather than a misunderstanding of the concept.

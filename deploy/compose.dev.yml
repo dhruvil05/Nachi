@@ -1,0 +1,28 @@
+# Local Postgres and Redis for development (not yet exercised: Phase 0 runs on SQLite
+# and in-memory stores). Start with:
+#   docker compose -f deploy/compose.dev.yml up -d
+# then point Nachi at it:
+#   NACHI_DATABASE_URL=postgresql+asyncpg://nachi:nachi@127.0.0.1:5432/nachi
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: nachi
+      POSTGRES_PASSWORD: nachi
+      POSTGRES_DB: nachi
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - nachi-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nachi"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "127.0.0.1:6379:6379"
+
+volumes:
+  nachi-pg:

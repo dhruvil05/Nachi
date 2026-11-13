@@ -1,0 +1,35 @@
+# Nachi against nexus-a2a `master`, checked out next to it exactly as on a dev machine
+# (the uv path source points at ../nexus-a2a). Runs nightly and on demand.
+# Canary red while `release` is green means a library change broke Nachi: fix it in
+# nexus-a2a before the next release.
+name: canary
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+  # nexus-a2a can trigger this on its own PRs with a repository_dispatch event.
+  repository_dispatch:
+    types: [nexus-a2a-changed]
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: nachi
+      - uses: actions/checkout@v4
+        with:
+          repository: dhruvil05/nexus-a2a
+          ref: ${{ github.event.client_payload.ref || 'master' }}
+          path: nexus-a2a
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - name: Install (nexus-a2a from the sibling checkout)
+        working-directory: nachi
+        run: uv sync
+      - name: All tests
+        working-directory: nachi
+        run: uv run pytest

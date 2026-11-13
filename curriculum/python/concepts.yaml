@@ -1,0 +1,147 @@
+# Intro Python curriculum for Nachi's MVP.
+# Each concept lists the concepts a learner should know first (prerequisites).
+# The Diagnostician probes these, the gateway picks the weakest ready concept, and in
+# phase 2 the Curriculum Planner orders them as a DAG.
+curriculum: python-intro
+title: Introduction to Python
+language: en
+concepts:
+  - id: values_and_types
+    title: Values and types
+    summary: Numbers, text and truth values, and how Python tells them apart.
+    prerequisites: []
+    objectives:
+      - Name the type of a literal (int, float, str, bool)
+      - Use type() to check a value's type
+
+  - id: variables
+    title: Variables and assignment
+    summary: Giving names to values and updating them.
+    prerequisites: [values_and_types]
+    objectives:
+      - Assign and reassign a variable
+      - Predict a variable's value after several assignments
+
+  - id: arithmetic
+    title: Arithmetic operators
+    summary: +, -, *, /, //, % and ** and the order they run in.
+    prerequisites: [values_and_types]
+    objectives:
+      - Predict the result of mixed arithmetic, including / versus //
+      - Use % to find a remainder
+
+  - id: strings
+    title: Strings
+    summary: Text values, indexing, slicing and joining.
+    prerequisites: [values_and_types]
+    objectives:
+      - Index and slice a string
+      - Build a string with concatenation and f-strings
+
+  - id: input_output
+    title: Printing and reading input
+    summary: Showing results with print() and reading text with input().
+    prerequisites: [variables, strings]
+    objectives:
+      - Print several values on one line
+      - Convert text from input() into a number
+
+  - id: booleans
+    title: Booleans and comparisons
+    summary: True and False, comparison operators, and/or/not.
+    prerequisites: [values_and_types]
+    objectives:
+      - Evaluate a comparison
+      - Combine conditions with and, or and not
+
+  - id: conditionals
+    title: if, elif and else
+    summary: Running code only when a condition holds.
+    prerequisites: [booleans, variables]
+    objectives:
+      - Trace which branch of an if/elif/else runs
+      - Write a condition with more than two outcomes
+
+  - id: while_loops
+    title: while loops
+    summary: Repeating code while a condition stays true.
+    prerequisites: [conditionals]
+    objectives:
+      - Trace a while loop to its final state
+      - Spot a loop that never ends
+
+  - id: lists
+    title: Lists
+    summary: Ordered, changeable collections of values.
+    prerequisites: [values_and_types, variables]
+    objectives:
+      - Index, slice and change a list
+      - Add and remove items with append and pop
+
+  - id: for_loops
+    title: for loops and range
+    summary: Repeating code once per item, or a set number of times.
+    prerequisites: [lists]
+    objectives:
+      - Trace a for loop over a list
+      - Use range() with start, stop and step
+
+  - id: functions
+    title: Defining functions
+    summary: Naming a block of code so it can be reused.
+    prerequisites: [variables]
+    objectives:
+      - Define and call a function
+      - Tell the difference between defining and calling
+
+  - id: parameters_and_return
+    title: Parameters and return values
+    summary: Passing values into a function and getting a result back.
+    prerequisites: [functions]
+    objectives:
+      - Predict what a function returns for given arguments
+      - Tell the difference between print and return
+
+  - id: scope
+    title: Scope
+    summary: Where a variable can be seen, inside and outside functions.
+    prerequisites: [parameters_and_return]
+    objectives:
+      - Predict which variable a name refers to inside a function
+
+  - id: string_methods
+    title: String methods
+    summary: Built-in operations on text such as split, join, upper and replace.
+    prerequisites: [strings, functions]
+    objectives:
+      - Split text into a list and join it back
+
+  - id: dictionaries
+    title: Dictionaries
+    summary: Looking values up by key.
+    prerequisites: [lists]
+    objectives:
+      - Add, read and update dictionary entries
+      - Loop over a dictionary's keys and values
+
+  - id: tuples_and_sets
+    title: Tuples and sets
+    summary: Fixed sequences and collections of unique values.
+    prerequisites: [lists]
+    objectives:
+      - Choose between a list, tuple and set for a task
+
+  - id: exceptions
+    title: Errors and exceptions
+    summary: Reading error messages and handling failures with try/except.
+    prerequisites: [conditionals, functions]
+    objectives:
+      - Read a traceback and name the failing line
+      - Catch a specific exception with try/except
+
+  - id: modules
+    title: Modules and imports
+    summary: Using code from Python's standard library and other files.
+    prerequisites: [functions]
+    objectives:
+      - Import a module and call one of its functions
