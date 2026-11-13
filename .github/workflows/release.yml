@@ -5,7 +5,7 @@ name: release
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
 
 jobs:
@@ -29,6 +29,8 @@ jobs:
       - name: Type check
         run: uv run --no-sources mypy
       - name: Unit tests
-        run: uv run --no-sources pytest -m "not contract"
+        run: uv run --no-sources pytest -m "not contract and not flow and not fault"
       - name: Contract tests (real agents on local ports + nexus verify)
         run: uv run --no-sources pytest -m contract
+      - name: Flow and fault tests (whole network over A2A, restarts mid-session)
+        run: uv run --no-sources pytest -m "flow or fault"

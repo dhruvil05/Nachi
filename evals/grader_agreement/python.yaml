@@ -1,0 +1,107 @@
+# Hand-graded answers for checking the Grader against a human.
+# Each item gives the range a careful human grader would accept. The nightly eval
+# (evals/run_grader_eval.py) calls the real Grader and reports how many land in range.
+# Objective items (mcq, tf, exact output) are graded without the LLM and are checked
+# in CI by tests/unit/test_evals.py; the rest need the model.
+items:
+  - id: mcq-right
+    question:
+      concept_id: lists
+      type: mcq
+      prompt: "What does [1, 2, 3][1] evaluate to?"
+      options: ["1", "2", "3", "IndexError"]
+      answer: "2"
+      justification: "List indexes start at 0, so index 1 is the second item."
+    answer: "2"
+    expect: [1.0, 1.0]
+
+  - id: mcq-letter
+    question:
+      concept_id: lists
+      type: mcq
+      prompt: "What does [1, 2, 3][1] evaluate to?"
+      options: ["1", "2", "3", "IndexError"]
+      answer: "2"
+      justification: "List indexes start at 0, so index 1 is the second item."
+    answer: "b"
+    expect: [1.0, 1.0]
+
+  - id: tf-wrong
+    question:
+      concept_id: arithmetic
+      type: tf
+      prompt: "In Python 3, 7 / 2 evaluates to 3."
+      answer: "false"
+      justification: "/ is true division and gives 3.5; // gives 3."
+    answer: "true"
+    expect: [0.0, 0.0]
+
+  - id: output-exact
+    question:
+      concept_id: for_loops
+      type: output
+      prompt: "for i in range(3):\n    print(i)"
+      answer: "0\n1\n2"
+      justification: "range(3) yields 0, 1 and 2."
+    answer: "0\n1\n2"
+    expect: [1.0, 1.0]
+
+  - id: output-off-by-one
+    question:
+      concept_id: for_loops
+      type: output
+      prompt: "for i in range(3):\n    print(i)"
+      answer: "0\n1\n2"
+      justification: "range(3) yields 0, 1 and 2."
+    answer: "1\n2\n3"
+    expect: [0.0, 0.4]
+
+  - id: fi-synonym
+    question:
+      concept_id: arithmetic
+      type: fi
+      prompt: "The operator ___ gives the remainder of a division."
+      answer: "%"
+      justification: "% is the modulo operator."
+    answer: "the % operator"
+    expect: [0.6, 1.0]
+
+  - id: sa-strong
+    question:
+      concept_id: parameters_and_return
+      type: sa
+      prompt: "What is the difference between printing a value and returning it from a function?"
+      answer: "print shows the value on screen; return hands it back to the caller so it can be used."
+      justification: "Only return makes the value available to the code that called the function."
+    answer: "print just displays it, but return gives the value back to whoever called the function so they can store or use it."
+    expect: [0.75, 1.0]
+
+  - id: sa-vague
+    question:
+      concept_id: parameters_and_return
+      type: sa
+      prompt: "What is the difference between printing a value and returning it from a function?"
+      answer: "print shows the value on screen; return hands it back to the caller so it can be used."
+      justification: "Only return makes the value available to the code that called the function."
+    answer: "they both output the value"
+    expect: [0.0, 0.25]
+
+  - id: sa-partly-wrong
+    question:
+      concept_id: scope
+      type: sa
+      prompt: "A function assigns x = 5. Does that change a variable x defined outside the function?"
+      answer: "No. The assignment creates a local x; the outer x is unchanged unless the function declares it global."
+      justification: "Assignment inside a function makes a local name by default."
+    answer: "Yes, it overwrites the outer x."
+    expect: [0.0, 0.25]
+
+  - id: sa-right-but-generic
+    question:
+      concept_id: dictionaries
+      type: sa
+      prompt: "Why would you use a dictionary instead of a list to store phone numbers by name?"
+      answer: "A dictionary looks a number up directly by name; a list would need searching."
+      justification: "Dictionaries map keys to values for direct lookup."
+    answer: "Dictionaries store key-value pairs."
+    expect: [0.25, 0.75]

@@ -12,3 +12,6 @@ build/
 *.sqlite3
 secrets/
 .env
+
+# Agent task stores (scripts/run_t1.py)
+data/
